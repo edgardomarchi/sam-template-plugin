@@ -12,6 +12,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui, uic
 from PyQt5.QtCore import pyqtSlot
 
 # Others:
+import json
 import os
 from pathlib import Path
 
@@ -56,7 +57,7 @@ class {{cookiecutter.plugin_name}}(BasePlugin):
         super().fromJson
         # TODO: Add your code here
 
-    @_producesChange
+    @BasePlugin._producesChange
     def someTask(self):
         # Example method that changes the plugin state.
         pass

@@ -166,8 +166,9 @@ $(PROJECT).spec:
 .PHONY: upload
 upload: dist ## Upload the current version to PyPI
 	git diff --name-only --exit-code
-	poetry publish
-	bin/open https://pypi.org/project/$(PROJECT)
+	poetry publish -vvv -r dilbert 
+	xdg-open http://dilbert.inti.gob.ar/pypiserver/simple/$(PROJECT)
+
 
 # CLEANUP #####################################################################
 
