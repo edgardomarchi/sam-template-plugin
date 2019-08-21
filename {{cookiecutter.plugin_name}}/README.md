@@ -2,7 +2,6 @@
 
 {{cookiecutter.project_short_description}}
 
-This project was generated with [cookiecutter](https://github.com/audreyr/cookiecutter) using a template based on [jacebrowning/template-python](https://github.com/jacebrowning/template-python).
 
 [![Unix Build Status](https://img.shields.io/travis/{{cookiecutter.github_username}}/{{cookiecutter.github_repo}}/{{cookiecutter.default_branch}}.svg?label=unix)](https://travis-ci.org/{{cookiecutter.github_username}}/{{cookiecutter.github_repo}})
 [![Windows Build Status](https://img.shields.io/appveyor/ci/{{cookiecutter.github_username}}/{{cookiecutter.github_repo}}/{{cookiecutter.default_branch}}.svg?label=window)](https://ci.appveyor.com/project/{{cookiecutter.github_username}}/{{cookiecutter.github_repo}})
@@ -17,6 +16,7 @@ This project was generated with [cookiecutter](https://github.com/audreyr/cookie
 
 * Python {{cookiecutter.python_major_version}}.{{cookiecutter.python_minor_version}}+
 * Plugins package
+* Sam, sam_gui packages
 
 ## Installation
 

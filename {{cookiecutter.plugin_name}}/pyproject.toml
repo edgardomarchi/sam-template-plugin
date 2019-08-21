@@ -37,6 +37,7 @@ plugins = "*"
 PyQt5 = "^5"
 click = "^6.0"
 minilog = "~0.4"
+sam_gui = "*"
 # TODO: add your library's requirements
 
 [tool.poetry.dev-dependencies]
@@ -64,6 +65,7 @@ coveragespace = "*"
 # Documentation
 mkdocs = "^1.0"
 pygments = "*"
+pydoc-markdown = "*"
 
 # Tooling
 pyinstaller = "*"
