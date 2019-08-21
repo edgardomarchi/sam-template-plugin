@@ -28,12 +28,6 @@ It is based upon [Jace Browning's template](https://github.com/jacebrowning/temp
 * Ready-to-distribute
 * Basic documentation
 
-## Examples
-
-Here are a few sample projects based on this template:
-
-* [jacebrowning/minilog](https://github.com/jacebrowning/minilog)
-
 
 ## Usage
 
@@ -41,7 +35,7 @@ Install `cookiecutter` and generate a project:
 
 ```
 $ pip install cookiecutter
-$ cookiecutter gh:jacebrowning/template-python -f
+$ cookiecutter gh:edgardomarchi/sam-template-plugin -f
 ```
 
 Cookiecutter will ask you for some basic info (your name, project name, python package name, etc.) and generate a base Python project for you.
