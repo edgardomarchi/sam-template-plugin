@@ -52,8 +52,9 @@ class {{cookiecutter.plugin_name}}(BasePlugin):
     def __init__(self, 
                  parent=None,
                  pluginData={},
-                 gui_mode=False):
-        super().__init__(parent, pluginData, gui_mode)
+                 gui_mode=False,
+                 path='.'):
+        super().__init__(parent, pluginData, gui_mode, path)
 
         if not self._pluginData:
             self._pluginData = copy.deepcopy(pluginDefaultData)
