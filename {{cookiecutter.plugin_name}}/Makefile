@@ -1,17 +1,28 @@
 # Project settings
-PROJECT := {{cookiecutter.plugin_name}}
-PACKAGE := {{cookiecutter.plugin_name}}
-REPOSITORY := {{cookiecutter.github_username}}/{{cookiecutter.github_repo}}
+PACKAGE := $(firstword $(shell poetry version))
+PROJECT := $(PACKAGE)
+REPOSITORY := http://dilbert.inti.gob.ar/gitlab/auto/{{cookiecutter.github_repo}}
+VERSION = $(word 2,$(shell poetry version))
 
 # Project paths
-PACKAGES := $(PACKAGE) tests
 CONFIG := $(wildcard *.py)
 MODULES := $(wildcard $(PACKAGE)/*.py)
 
 # Virtual environment paths
-VIRTUAL_ENV ?= .venv
+VIRTUAL_ENV := .venv
+
+# ARG processing
+DEFAULTARG=patch
+
+# aux functions
+include makeutils/functions.mk
+
+# commands
+BUMPVERSION = bump2version
 
 # MAIN TASKS ##################################################################
+
+.DEFAULT: ;
 
 .PHONY: all
 all: install
@@ -39,10 +50,14 @@ DEPENDENCIES := $(VIRTUAL_ENV)/.poetry-$(shell bin/checksum pyproject.toml poetr
 
 .PHONY: install
 install: $(DEPENDENCIES) .cache
+	@if ! $(call check-package,$(PACKAGE)) ; then      \
+	  echo "$(PACKAGE) not installed. Installing ..." ;\
+	  poetry install                                  ;\
+	fi
 
 $(DEPENDENCIES): poetry.lock
-	@ poetry config settings.virtualenvs.in-project true
-	poetry install
+	@ poetry config virtualenvs.in-project true
+	poetry install --no-root
 	@ touch $@
 
 poetry.lock: pyproject.toml
@@ -56,8 +71,8 @@ poetry.lock: pyproject.toml
 
 .PHONY: format
 format: install
-	poetry run isort $(PACKAGES) --recursive --apply
-	poetry run black $(PACKAGES)
+	poetry run isort $(PACKAGE) --recursive --apply
+	poetry run black $(PACKAGE)
 	@ echo
 
 .PHONY: check
@@ -65,9 +80,9 @@ check: install format  ## Run formaters, linters, and static analysis
 ifdef CI
 	git diff --exit-code
 endif
-	poetry run pylint $(PACKAGES) --rcfile=.pylint.ini
-	poetry run mypy $(PACKAGES) --config-file=.mypy.ini
-	poetry run pydocstyle $(PACKAGES) $(CONFIG)
+	poetry run pylint $(PACKAGE) --rcfile=.pylint.ini
+	poetry run mypy $(PACKAGE) --config-file=.mypy.ini
+	poetry run pydocstyle $(PACKAGE) $(CONFIG)
 
 # TESTS #######################################################################
 
@@ -99,9 +114,9 @@ test-int: install
 
 .PHONY: test-all
 test-all: install
-	@ if test -e $(FAILURES); then poetry run pytest $(PACKAGES) $(PYTEST_RERUN_OPTIONS); fi
+	@ if test -e $(FAILURES); then poetry run pytest $(PACKAGE) $(PYTEST_RERUN_OPTIONS); fi
 	@ rm -rf $(FAILURES)
-	poetry run pytest $(PACKAGES) $(PYTEST_OPTIONS)
+	poetry run pytest tests $(PACKAGE) $(PYTEST_OPTIONS)
 	poetry run coveragespace $(REPOSITORY) overall
 
 .PHONY: read-coverage
@@ -110,25 +125,22 @@ read-coverage:
 
 # DOCUMENTATION ###############################################################
 
-MKDOCS_INDEX := site/index.html
+SPHINX_INDEX := docs/_build/index.html
 
 .PHONY: docs
-docs: mkdocs uml ## Generate documentation and UML
+docs: sphinx uml ## Generate documentation and UML
 
-.PHONY: mkdocs
-mkdocs: install $(MKDOCS_INDEX)
-$(MKDOCS_INDEX): docs/requirements.txt mkdocs.yml docs/*.md
-	@ mkdir -p docs/about docs/API
-	@ cd docs && ln -sf ../README.md index.md
+.PHONY: sphinx
+sphinx: install $(SPHINX_INDEX)
+
+$(SPHINX_INDEX): docs/*.md
+	@ mkdir -p docs/about
+	@ cd docs && ln -sf ../README.md README.md
 	@ cd docs/about && ln -sf ../../CHANGELOG.md changelog.md
 	@ cd docs/about && ln -sf ../../CONTRIBUTING.md contributing.md
 	@ cd docs/about && ln -sf ../../LICENSE.md license.md
-	poetry run pydocmd simple {{cookiecutter.plugin_name}}++ > ./docs/API/{{cookiecutter.plugin_name}}.md
-	poetry run mkdocs build --clean --strict
-
-# Workaround: https://github.com/rtfd/readthedocs.org/issues/5090
-docs/requirements.txt: poetry.lock
-	@ poetry run pip freeze -qqq | grep mkdocs > $@
+	cd docs && $(MAKE) clean
+	cd docs && $(MAKE) html
 
 .PHONY: uml
 uml: install docs/*.png
@@ -137,38 +149,71 @@ docs/*.png: $(MODULES)
 	- mv -f classes_$(PACKAGE).png docs/classes.png
 	- mv -f packages_$(PACKAGE).png docs/packages.png
 
-.PHONY: mkdocs-live
-mkdocs-live: mkdocs
-	eval "sleep 3; bin/open http://127.0.0.1:8000" &
-	poetry run mkdocs serve
+# .PHONY: sphinx-serve
+# sphinx-serve: sphinx
+# 	python -m http.server http://localhost:8000/build_/html/index.html
+
+
 
 # BUILD #######################################################################
 
-DIST_FILES := dist/*.tar.gz dist/*.whl
-EXE_FILES := dist/$(PROJECT).*
+EXE_FILES := dist/$(PACKAGE).*
+
+SDIST := dist/$(PACKAGE)-$(VERSION)*.tar.gz
+WHEEL := dist/$(PACKAGE)-$(VERSION)*.whl
+
+DIST_FILES := $(SDIST) $(WHEEL)
 
 .PHONY: dist
 dist: install $(DIST_FILES)
-$(DIST_FILES): $(MODULES) pyproject.toml
-	rm -f $(DIST_FILES)
-	poetry build
 
+$(SDIST): $(MODULES) pyproject.toml
+	@ poetry build -f sdist
+
+$(WHEEL): $(MODULES) pyproject.toml
+	@ poetry build -f wheel
+
+# For framework/shared support: https://github.com/yyuu/pyenv/wiki
 .PHONY: exe
 exe: install $(EXE_FILES)
-$(EXE_FILES): $(MODULES) $(PROJECT).spec
-	# For framework/shared support: https://github.com/yyuu/pyenv/wiki
-	poetry run pyinstaller $(PROJECT).spec --noconfirm --clean
+$(EXE_FILES): $(MODULES) $(PACKAGE).spec
+	poetry run pyinstaller $(PACKAGE).spec --noconfirm --clean
 
-$(PROJECT).spec:
-	poetry run pyi-makespec $(PACKAGE)/__main__.py --onefile --windowed --name=$(PROJECT)
+$(PACKAGE).spec:
+	poetry run pyi-makespec $(PACKAGE)/__main__.py --onefile --windowed --name=$(PACKAGE)
 
 # RELEASE #####################################################################
 
+.PHONY: version version-chk
+version-chk: install
+	@$(call check-create-branch,master)
+	@$(call check-create-branch,develop)
+	@$(call assert-command-present,$(BUMPVERSION))
+	@$(check-wd)
+	@ echo "Checking out develop ..." && git checkout develop --quiet
+	@ echo "Commiting 'poetry.lock' if required ..."
+	@ git add poetry.lock
+	@ git commit --porcelain -m"poetry.lock" || true
+	@$(call check-upstream,master)
+	@$(call check-upstream,develop)
+
+version: version-chk ## Make a version bumps and push it to master
+	@ echo "Checking out master ..." && git checkout master --quiet
+	@ echo "Merging develop into master" && \
+	  git merge -m"Merge branch 'develop'" --quiet --no-ff develop
+	@ poetry run $(BUMPVERSION) $(FIRSTARG)
+	@ git push --set-upstream origin master
+	@ git push origin --tags
+	@ echo "Checking out develop ..." && git checkout develop
+	@ git merge -m"Merge branch 'master' into 'develop'" --quiet --no-ff master
+	@ git push --set-upstream origin develop
+	@ git push origin --tags
+	@ $(call inf,version dump: $(VERSION) OK!)
+
 .PHONY: upload
-upload: dist ## Upload the current version to PyPI
-	git diff --name-only --exit-code
-	poetry publish -vvv -r dilbert 
-	xdg-open http://dilbert.inti.gob.ar/pypiserver/simple/$(PROJECT)
+upload: version dist ## Upload the current version to pypiserver(dilbert)
+	@ poetry publish -r dilbert
+	@ bin/open http://dilbert.inti.gob.ar/pypiserver/simple/$(PACKAGE)
 
 
 # CLEANUP #####################################################################
@@ -182,7 +227,8 @@ clean-all: clean
 
 .PHONY: .clean-install
 .clean-install:
-	find $(PACKAGES) -name '__pycache__' -delete
+	find $(PACKAGE) -path '*/__pycache__*' -delete
+	find $(PACKAGE) -type d -name '__pycache__' -empty -delete
 	rm -rf *.egg-info
 
 .PHONY: .clean-test
@@ -198,9 +244,8 @@ clean-all: clean
 	rm -rf *.spec dist build
 
 # HELP ########################################################################
-
 .PHONY: help
 help: all
-	@ grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help

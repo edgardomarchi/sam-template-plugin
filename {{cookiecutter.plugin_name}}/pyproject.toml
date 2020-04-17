@@ -1,7 +1,7 @@
 [tool.poetry]
 
 name = "{{cookiecutter.plugin_name}}"
-version = "0.0"
+version = "0.0.1"
 description = "{{cookiecutter.project_short_description}}"
 
 license = "MIT"
@@ -38,13 +38,14 @@ PyQt5 = "^5"
 click = "^6.0"
 minilog = "~0.4"
 samgui = "*"
+commonutils = ">=1.0.6"
 # TODO: add your library's requirements
 
 [tool.poetry.dev-dependencies]
 
 # Formatters
-black = "=19.3b0"
-isort = "=4.3.4"
+black = "=19.10b0"  # The uncompromising Python code formatter
+isort = "=4.3.21"   # A Python utility / library to sort imports
 
 # Linters
 mypy = "*"
@@ -57,21 +58,23 @@ pytest-cov = "*"
 pytest-describe = "*"
 pytest-expecter = "*"
 pytest-random = "*"
-freezegun = "*"
+freezegun = "*"        # a mocking library for datetime
 
 # Reports
 coveragespace = "*"
 
 # Documentation
-mkdocs = "^1.0"
+sphinx = "*"
 pygments = "*"
-pydoc-markdown = "*"
+doc8 = "*"
+recommonmark = "*"
+m2r = "*"
 
 # Tooling
 pyinstaller = "*"
 sniffer = "*"
-MacFSEvents = { version = "*", platform = "darwin" }
-pync = { version = "*", platform = "darwin" }
+pyinotify = "*"
+bump2version = "*"
 
 [tool.poetry.scripts]
 
@@ -84,5 +87,5 @@ skip-string-normalization = true
 
 [build-system]
 
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0"]
 build-backend = "poetry.masonry.api"
