@@ -3,7 +3,7 @@
 # Logging facilities:
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Plugins:
 from plugins.basePlugin import BasePlugin
@@ -21,6 +21,8 @@ import os
 from pathlib import Path
 
 from .ui.ui import Ui
+
+from commonutils.operadores.operadores import operadores_dict
 
 # Intrumentos a utilizar (Ej: Analizador de espectro)
 from instruments.spectrum_analyzer.safrontend import SAFrontend

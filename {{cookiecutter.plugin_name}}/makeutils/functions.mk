@@ -2,7 +2,7 @@ not-empty = $(if $(strip $1),T)
 empty = $(if $(strip $1),,T)
 
 PIP := $(VIRTUAL_ENV)/bin/pip
-which = which $1 || which $(VIRTUAL_ENV)/bin/$1 >/dev/null
+which = which $1 >/dev/null || which $(VIRTUAL_ENV)/bin/$1 >/dev/null
 RED=\e[0;31m
 LRED=\e[1;31m
 LCYAN=\e[96m
@@ -13,15 +13,15 @@ ARGS = $(filter-out $(word 1,$(MAKECMDGOALS)), $(MAKECMDGOALS))
 FIRSTARG = $(if $(call empty, $(ARGS)),$(DEFAULTARG),$(word 1,$(ARGS)))
 
 define err
-echo -e "$(LRED)$(1)$(NC)"
+printf "$(LRED)%s$(NC)\n" "$(1)"
 endef
 
 define warn
-echo -e "$(LYEL)$(1)$(NC)"
+printf "$(LYEL)%s$(NC)\n" "$(1)"
 endef
 
 define inf
-echo -e "$(LCYAN)$(1)$(NC)"
+printf "$(LCYAN)%s$(NC)\n" "$(1)"
 endef
 
 # check-package(package)
@@ -30,26 +30,39 @@ define check-package
 $(PIP) show --quiet $1
 endef
 
+# check-file-changes(file)
+#   Chequea si file debe ser commiteado y lo commitea en ese caso
+define check-file-changes
+printf "Commiting %s if required ..." "$(1)"
+if git diff --name-only | grep -q $1; then             \
+  $(call inf,yes)                                    ; \
+  git add $1                                         ; \
+	git commit --quiet -m"$1"                          ; \
+else                                                   \
+  $(call inf,no)                                     ; \
+fi
+endef
+
 # check-wd
 #   Chequea primero si el working directory del repositorio git está limpio y
 #   luego chequea si el staging area tambien se encuentra limpia.
 #   Si, alguna de las condiciones falla, mensaje de error y devuelve 1
 define check-wd
-echo -n "Checking working directory..."
+printf "Checking working directory..."
 if git diff --quiet --exit-code ; then                 \
   $(call inf,ok)                                     ; \
 else                                                   \
   $(call err,working directory not clean. Aborting)  ; \
-  echo "Changes:"                                    ; \
+  printf "Changes:"                                    ; \
   git diff --name-only                               ; \
   exit 1                                             ; \
 fi
-echo -n "Checking staging area..."
+printf "Checking staging area..."
 if git diff --cached --quiet --exit-code ; then        \
   $(call inf,ok)                                     ; \
 else                                                   \
   $(call err,staging area not clean. Aborting)       ; \
-  echo "Changes:"                                    ; \
+  printf "Changes:"                                    ; \
   git diff --cached --name-only                      ; \
   exit 1                                             ; \
 fi
@@ -57,9 +70,9 @@ endef
 
 # assert-command-present(command)
 # Chequea si existe un comando en el PATH o en el python environment definido
-#	en VIRTUAL_ENV. Si no existe, entrega un mensaje de error y retorna 1
+# en VIRTUAL_ENV. Si no existe, entrega un mensaje de error y retorna 1
 define assert-command-present
-echo -n "Checking for $1..."
+printf "Checking for %s..." "$(1)"
 if $(call which,$1) ; then                              \
   $(call inf,ok)                                      ; \
 else                                                    \
