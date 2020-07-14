@@ -62,22 +62,9 @@ class {{cookiecutter.plugin_name}}(BasePlugin):
                  parent=None,
                  path='.',
                  pluginData={},
-                 gui_mode=False):
-        super().__init__(parent=parent, path=path, pluginData=pluginData, gui_mode=gui_mode)
+                 gui_mode=False): # Deprecado!
+        super().__init__(parent=parent, path=path, pluginData=pluginData, gui_mode=gui_mode) # Deprecado!
   
-        self._saFrontend = SAFrontend(gui_mode=gui_mode, parent=self)
-        # GUI (if required)
-        if self._gui_mode:
-            self.ui = Ui(saWidget=self._saFrontend.widget())
-            self._widget = self.ui      # Para compatibilidad
-            self.ui.parameterSpinBox.valueChanged.connect(self.setValue)
-            self.ui.runPushButton.clicked.connect(self.acquireData)
-
-	    # Parámetros
-        if not self._pluginData:
-            self.fromJsonDict(pluginDefaultData)
-        else:
-            self.fromJsonDict(self._pluginData)
   
     def cleanUp(self):
         '''TODO: Place comments about cleanUp tasks on plugin destroy here.
