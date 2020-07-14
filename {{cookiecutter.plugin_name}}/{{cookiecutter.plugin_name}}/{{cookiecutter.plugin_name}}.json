@@ -3,6 +3,7 @@
         "value": 42
     },
     "results":{
-        "data":[]
+        "value": 0,
+        "trace":{}
     }   
 }
